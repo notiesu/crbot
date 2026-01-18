@@ -1,0 +1,3 @@
+[submodule "clash-simulator"]
+	path = clash-simulator
+	url = https://github.com/notiesu/clash-simulator

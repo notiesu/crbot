@@ -1,0 +1,1 @@
+aws s3 ls --region us-ca-2 --endpoint-url https://s3api-us-ca-2.runpod.io s3://${RUNPOD_NETWORK_BUCKET}

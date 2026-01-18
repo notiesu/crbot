@@ -1,0 +1,6 @@
+{
+    "input": {
+        "train_dir": "/runpod-volume/$TRAIN_DIR",
+        "run_name": "$RUN_NAME"
+    }
+}
