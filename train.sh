@@ -45,11 +45,14 @@ while [ "$STATUS" != "COMPLETED" ]; do
 done
 
 # download model training outputs
-aws s3 sync s3://$RUNPOD_NETWORK_BUCKET/cr-checkpts/$RUN_NAME/output \
-            ./$RUN_NAME/output \
-            --size-only \
-            --region us-ca-2 \
-            --endpoint-url https://s3api-us-ca-2.runpod.io || {
-    echo "Error downloading output for $RUN_NAME"
+aws s3 cp "s3://$RUNPOD_NETWORK_BUCKET/cr-checkpts/$RUN_NAME/output" \
+    "./outputs/$RUN_NAME/output" \
+    --region us-ca-2 \
+    --endpoint-url https://s3api-us-ca-2.runpod.io \
+    --recursive \
+    --only-show-errors || {
+    echo "Error downloading outputs for $RUN_NAME"
     exit 1
 }
+
+echo "Training completed successfully. Outputs downloaded to ./outputs/$RUN_NAME/output"

@@ -1,4 +1,6 @@
-.env*
+*.env
 .DS_Store
 tmp
-example
+outputs
+*.zip
+tmp/*
