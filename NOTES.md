@@ -1,9 +1,20 @@
 path to battle logic: py-clash-bot/pyclashbot/bot/fight.py
 
+ISSUE:
+GAME REPLAYS TERMINATING BEFORE SCHEDULED STEPS. THIS COULD INDICATE A MISMATCH IN THE GAME ENVIRONMENTS AND INFERENCE LOOPS.
+
 TODO:
+EXPOSE RecurrentPPO.logger for logging training stats
+Multi-agent inference
+    - Create abstraction for opponent policy input
+    - Tranpose observation space as player 0 instead of player 1
+    - Inverse transpose to play move as player 1
+Simple training test - if we fix the opponent policy with a series of game actions, how fast do we converge on 100% win rate?
+    - Log statistics - this could be good for determing how much compute to use
 Check for existence of basic smart parameters:
-- Opponent cycle
-- Opponent elixir
+    - Opponent cycle
+    - Opponent elixir
+
 
 Notes:
 card_detection.py

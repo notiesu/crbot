@@ -5,6 +5,9 @@ import sys
 from sb3_contrib import RecurrentPPO
 import os
 from stable_baselines3.common.vec_env import DummyVecEnv
+from stable_baselines3.common.logger import configure
+from stable_baselines3.common.callbacks import BaseCallback
+
 
 from src.clasher.gym_env import ClashRoyaleGymEnv
 import gymnasium as gym
@@ -16,12 +19,15 @@ import time
 
 from collections import deque
 
-
+logger = configure(
+    folder="./output/logs/",
+    format_strings=["stdout", "tensorboard"]
+)
 
 #!! : MAKE SURE YOU ALLOW ARG PARSING WITH DOUBLE TAGS
 
 
-MAX_RUNTIME = int(8 * 60)  # Maximum runtime in seconds (8.5 minutes)
+MAX_RUNTIME = int(18 * 60)  # Maximum runtime in seconds (18 minutes)
 #start timer
 start_time = time.time()
 
@@ -172,51 +178,22 @@ print("Current working directory:", os.getcwd())
 CHECKPOINT_ABSOLUTE = "/tmp/train/recurrentppo_1lr_checkpoint.zip"
 os.makedirs(args.output_dir, exist_ok=True)
 
-#logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
 # Wrap env for PPO
 env = PPORewardWrapper(PPOObsWrapper(ClashRoyaleGymEnv()))
 vec_env = DummyVecEnv([lambda: env])
 
 # callback for printing model params per step
-def model_callback(_locals, _globals):
-    pass
-    # self = _locals['self']
-    # sb3_logger = getattr(self, "logger", None)
-    # vals = getattr(sb3_logger, "name_to_value", {}) if sb3_logger is not None else {}
 
-    # # Basic scalars
-    # timesteps = getattr(self, "num_timesteps", None)
-    # iterations = vals.get("train/iterations", vals.get("iterations", None))
-    # iterations = iterations or getattr(self, "n_updates", None)
+from stable_baselines3.common.callbacks import BaseCallback
 
-    # print(f"Timesteps: {timesteps} | iterations: {iterations}")
+class PrintAllLoggerKeys(BaseCallback):
+    def _on_step(self) -> bool:
+        logs = self.logger.name_to_value
+        if logs:  # only print if there’s something
+            print(" | ".join(f"{k}={v:.6f}" if isinstance(v, float) else f"{k}={v}" 
+                             for k, v in logs.items()))
+        return True
 
-    # # Keys to try to display (common SB3 names)
-    # keys = [
-    #     "value_loss",
-    #     "policy_gradient_loss",
-    #     "n_updates",
-    #     "loss",
-    #     "learning_rate",
-    #     "explained_variance",
-    #     "entropy_loss",
-    #     "clip_range",
-    #     "clip_fraction",
-    #     "approx_kl",
-    #     "train/total_timesteps",
-    #     "train/iterations",
-    #     "time/fps",
-    #     "time/elapsed",
-    # ]
-
-    # for k in keys:
-    #     if k in vals:
-    #         print(f"{k:25} | {vals[k]}")
-
-    # return True
 
 # Instantiate PPO
 if os.path.exists(CHECKPOINT_ABSOLUTE):
@@ -240,12 +217,10 @@ else:
 print(f"type(model): {type(model)}")
 print(f"model.policy: {model.policy}")
 
-
-
 # Reward plateau training loop
 
 eval_env = DummyVecEnv([lambda: PPORewardWrapper(PPOObsWrapper(ClashRoyaleGymEnv()))])
-def evaluate_model(model, eval_env, n_eval_episodes=15):
+def evaluate_model(model, eval_env, n_eval_episodes=30):
     rewards = []
     episode_lengths = []
 
@@ -257,6 +232,8 @@ def evaluate_model(model, eval_env, n_eval_episodes=15):
         total_reward = 0.0
         steps = 0
         done = False
+
+        #
 
         # initialize per-evaluation wins counter on first episode
         if len(rewards) == 0:
@@ -305,7 +282,7 @@ def evaluate_model(model, eval_env, n_eval_episodes=15):
 
 
 total_timesteps = 10_000_000
-eval_interval = 25_000       # timesteps per evaluation chunk
+eval_interval = 50_000       # timesteps per evaluation chunk
 patience = 5                  # stop if no improvement for 5 evals
 best_reward = -np.inf
 no_improve_count = 0
@@ -316,10 +293,11 @@ timesteps_done = 0
 #log model
 logger.info("Starting training...")
 
+model.verbose = 1
 # Train for up to total_timesteps with plateau detection
 while timesteps_done < total_timesteps and (time.time() - start_time < MAX_RUNTIME):
     chunk = min(eval_interval, total_timesteps - timesteps_done)
-    model.learn(total_timesteps=chunk, reset_num_timesteps=False, progress_bar=False, callback=model_callback)
+    model.learn(total_timesteps=chunk, reset_num_timesteps=False, progress_bar=False, callback=PrintAllLoggerKeys())
     timesteps_done += chunk
 
     #TIME CHECK
