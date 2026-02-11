@@ -3,17 +3,20 @@ path to battle logic: py-clash-bot/pyclashbot/bot/fight.py
 ISSUE:
 GAME REPLAYS TERMINATING BEFORE SCHEDULED STEPS. THIS COULD INDICATE A MISMATCH IN THE GAME ENVIRONMENTS AND INFERENCE LOOPS.
 
+They play the latest policy against itself for 80% of games, and play against older
+policies for 20% of games (for details of opponent sampling, see Appendix N). The rollout machines
+run the game engine but not the policy; they communicate with a separate pool of GPU machines
+which run forward passes in larger batches of approximately 60. These machines frequently poll the
+controller to gather the newest parameters.
+
+These experiments on the early part of training indicate that high quality data matters even
+more than compute consumed; small degradations in data quality have severe effects on learning.
+Full details of the experiment setup can be found in Appendix M.
+
+
+
 TODO:
-EXPOSE RecurrentPPO.logger for logging training stats
-Multi-agent inference
-    - Create abstraction for opponent policy input
-    - Tranpose observation space as player 0 instead of player 1
-    - Inverse transpose to play move as player 1
-Simple training test - if we fix the opponent policy with a series of game actions, how fast do we converge on 100% win rate?
-    - Log statistics - this could be good for determing how much compute to use
-Check for existence of basic smart parameters:
-    - Opponent cycle
-    - Opponent elixir
+CHANGE BATCH SIZE TO N_ENVS * AVG_NUM_TIMESTEPS
 
 
 Notes:
