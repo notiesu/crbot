@@ -14,16 +14,10 @@ more than compute consumed; small degradations in data quality have severe effec
 Full details of the experiment setup can be found in Appendix M.
 
 
-
 TODO:
 CHANGE BATCH SIZE TO N_ENVS * AVG_NUM_TIMESTEPS
 
-
 Notes:
-card_detection.py
-It looks like card detection is handled by using color schemes, card classifications
-It detects coordinates for each card - this can be passed on to battle logic to decide plays
-
 
 Some RL Learnings:
 
