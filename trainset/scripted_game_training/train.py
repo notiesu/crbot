@@ -12,6 +12,7 @@ from wrappers.rppowrappers import PPOObsWrapper, PPORewardWrapper
 
 
 from src.clasher.gym_env import ClashRoyaleGymEnv, ClashRoyaleVectorEnv
+from src.clasher.vec_model import VecInferenceModel
 
 from wrappers.recurrentppo import RecurrentPPOInferenceModel
 from wrappers.randompolicy import RandomPolicyInferenceModel
@@ -28,7 +29,7 @@ import time
 from collections import deque
 
 #training against a scripted opponent - run evaluations 
-TOTAL_TIMESTEPS = 10_000_000
+TOTAL_TIMESTEPS = 3_000_000
 EVAL_INTERVAL = 50_000       # timesteps per evaluation chunk
 TIMESTEPS_DONE = 0
 NUM_ENVS_TRAINING = 10
@@ -39,13 +40,14 @@ BATCH_SIZE = 512
 # RECURRENTPPO = RecurrentPPOInferenceModel("train/recurrentppo_1lr_checkpoint.zip")
 # RANDOM = RandomPolicyInferenceModel(ClashRoyaleGymEnv())
 MODEL_NAME = "RPPO_ScriptedOpponent"
-CHECKPOINT_ABSOLUTE = f"/tmp/train/{MODEL_NAME}.zip"
-OPPONENT = ReplayInferenceModel(ClashRoyaleGymEnv(), replay_path="/tmp/train/replay_opponent.jsonl")
+CHECKPOINT_PATH = f"train/{MODEL_NAME}.zip"
+OPPONENT = ReplayInferenceModel(ClashRoyaleGymEnv(), replay_path="train/replay_opponent.jsonl")
 OPPONENT_POLICIES = [
     # RecurrentPPOInferenceModel("/tmp/train/recurrentppo_1lr_checkpoint.zip"),
     OPPONENT
 ]
-LEARNING_RATE = 1e-3
+LEARNING_RATE = 3e-3
+DECK = ["Cannon", "Fireball", "HogRider", "IceGolemite", "IceSpirits", "Musketeer", "Skeletons", "Log"]
 
 patience = 5                  # stop if no improvement for 5 evals
 best_reward = -np.inf
@@ -71,7 +73,7 @@ if __name__ == "__main__":
     
     def make_env(opponent_policy):
         def _init():
-            env = ClashRoyaleGymEnv()
+            env = ClashRoyaleGymEnv(deck0=DECK, deck1=DECK)
             env.set_opponent_policy(opponent_policy)
             env = PPOObsWrapper(env)
             env = PPORewardWrapper(env)
@@ -83,11 +85,11 @@ if __name__ == "__main__":
         for i in range(NUM_ENVS_TRAINING)
     ]
     vec_env = SubprocVecEnv(env_fns)
-    eval_env = EvalVectorEnv(num_envs=NUM_ENVS_EVAL, opponent_policies=OPPONENT_POLICIES)
+    # eval_env = EvalVectorEnv(num_envs=NUM_ENVS_EVAL, opponent_policies=OPPONENT_POLICIES)
     # Instantiate PPO
-    if os.path.exists(CHECKPOINT_ABSOLUTE):
+    if os.path.exists(CHECKPOINT_PATH):
         print("Loading checkpoint...")
-        model = RecurrentPPO.load(CHECKPOINT_ABSOLUTE, env=vec_env)
+        model = RecurrentPPO.load(CHECKPOINT_PATH, env=vec_env)
         
         timesteps_done = model.num_timesteps
     else:
@@ -95,7 +97,7 @@ if __name__ == "__main__":
         model = RecurrentPPO(
             "MlpLstmPolicy",
             vec_env,
-            learning_rate=3e-4,
+            learning_rate=LEARNING_RATE,
             n_steps=N_STEPS,
             batch_size=BATCH_SIZE,
             gamma=0.997,
@@ -124,11 +126,14 @@ if __name__ == "__main__":
             break
         
         # Evaluate
-        print("Evaluating current model...")
+        # print("Evaluating current model...")
         #wrap the model in an inference wrapper to handle action masks and recurrent states
-        eval_model = RecurrentPPOInferenceModel()
-        eval_model.model = model
-        eval_env.evaluate(eval_model, num_episodes=30)
+        # eval_model = RecurrentPPOInferenceModel(model_path=None)
+        # eval_model.model = model
+        # eval_model.eval_mode = True
+        # eval_model = VecInferenceModel(eval_model)  # add vectorized inference capabilities
+
+        # eval_env.evaluate(eval_model, num_episodes=30, initial_state=None)
 
         # TIME CHECK
         if time.time() - start_time >= MAX_RUNTIME:

@@ -18,12 +18,12 @@ This script evaluates the trained model for n steps
 if __name__ == "__main__":
 
     DECK = ["Cannon", "Fireball", "HogRider", "IceGolemite", "IceSpirits", "Musketeer", "Skeletons", "Log"]
-    NUM_ENVS = 10
+    NUM_ENVS = 2
     NUM_EPISODES = 100
     ONNX_MODEL_DIR = "train/recurrentppo.onnx"
-    MODEL_DIR = "train/recurrentppo_1lr_checkpoint_7.zip"
+    MODEL_DIR = "train/recurrentppo_1lr_checkpoint_3"
 
-    RANDOM_MODEL = RandomPolicyInferenceModel(no_op_pct=50/51) #plays a move about every 300 steps
+    RANDOM_MODEL = RandomPolicyInferenceModel(no_op_pct=249/250) #plays a move about every 300 steps
     # RPPO_ONNX_MODEL = VecInferenceModel(RecurrentPPOONNXInferenceModel(ONNX_MODEL_DIR, deterministic=True))
     RPPO_MODEL = VecInferenceModel(RecurrentPPOInferenceModel(MODEL_DIR, deterministic=True))
     OPPONENT_POLICIES = [RANDOM_MODEL]
@@ -34,6 +34,7 @@ if __name__ == "__main__":
     rppo_state_template = None
     eval_env = EvalVectorEnv(num_envs=NUM_ENVS, opponent_policies=OPPONENT_POLICIES, opponent_states=OPPONENT_STATES, initial_state=rppo_state_template, deck0 = DECK, deck1 = DECK)
     eval_env.evaluate(model=RPPO_MODEL, num_episodes=NUM_EPISODES)
+
 
 
 
